@@ -29,10 +29,6 @@ body {
     color: green;
 }
 
-.pagination {
-    margin-top: 20px;
-}
-
 .pagination button {
     margin: 5px;
 }
@@ -49,12 +45,11 @@ body {
 <h1>Тест</h1>
 
 <button onclick="shuffleQuestions()">Барлық сұрақтарды араластыру</button>
-<button onclick="shuffleCurrentPage()">Осы беттегі 30 сұрақты араластыру</button>
-<button onclick="showCorrectAnswers()">Дұрыс жауаптарды көрсету</button>
+<button onclick="shuffleCurrentPage()">Осы беттегі сұрақтарды араластыру</button>
 <button onclick="resetAll()">Қайта бастау</button>
 
 <div id="quiz"></div>
-<div class="pagination" id="pagination"></div>
+<div id="pagination"></div>
 
 <script>
 
@@ -95,13 +90,13 @@ function renderPage(page) {
 
         const answerLine = lines[lines.length - 1];
         const match = answerLine.match(/\{@([A-Z])@\}/);
-        const correctLetter = match ? match[1] : 'A';
 
+        const correctLetter = match ? match[1] : 'A';
         const correctIndexOriginal = correctLetter.charCodeAt(0) - 65;
+
         const correctVariant = variants[correctIndexOriginal];
 
         const shuffled = shuffle([...variants]);
-        const correctIndex = shuffled.indexOf(correctVariant);
 
         const qIndex = start + index;
 
@@ -115,8 +110,6 @@ function renderPage(page) {
         const result = document.createElement('div');
         result.id = 'result' + qIndex;
 
-        const labels = ['A','B','C','D','E'];
-
         shuffled.forEach((v, i) => {
 
             const label = document.createElement('label');
@@ -126,14 +119,15 @@ function renderPage(page) {
             input.type = 'radio';
             input.name = 'q' + qIndex;
 
+            // 🔥 ВАЖНО: сравниваем по значению, не по индексу
             input.onclick = () => {
-                checkAnswer(qIndex, i === correctIndex);
+                checkAnswer(qIndex, v, correctVariant);
             };
 
             label.appendChild(input);
-            label.innerHTML += ' ' + labels[i] + '. ' + v;
+            label.innerHTML += ' ' + v;
 
-            if (i === correctIndex) {
+            if (v === correctVariant) {
                 label.dataset.correct = true;
             }
 
@@ -145,10 +139,11 @@ function renderPage(page) {
     });
 }
 
-function checkAnswer(index, isCorrect) {
+// 🔥 ГЛАВНОЕ ИСПРАВЛЕНИЕ
+function checkAnswer(index, selected, correct) {
     const result = document.getElementById('result' + index);
 
-    if (isCorrect) {
+    if (selected === correct) {
         result.textContent = 'Дұрыс ✅';
         result.className = 'correct';
     } else {
@@ -165,7 +160,7 @@ function shuffle(arr) {
     return arr;
 }
 
-// 🔥 ВСЕ вопросы
+// 🔥 перемешать все вопросы
 function shuffleQuestions() {
     allQuestions = shuffle([...allQuestions]);
     currentPage = 1;
@@ -173,13 +168,13 @@ function shuffleQuestions() {
     renderPagination();
 }
 
-// 🔥 ТОЛЬКО текущие 30 вопросов
+// 🔥 перемешать только текущую страницу (30 вопросов)
 function shuffleCurrentPage() {
     const start = (currentPage - 1) * questionsPerPage;
     const end = start + questionsPerPage;
 
-    const current = allQuestions.slice(start, end);
-    const shuffled = shuffle([...current]);
+    const part = allQuestions.slice(start, end);
+    const shuffled = shuffle([...part]);
 
     for (let i = 0; i < shuffled.length; i++) {
         allQuestions[start + i] = shuffled[i];
@@ -208,12 +203,6 @@ function renderPagination() {
 
         div.appendChild(btn);
     }
-}
-
-function showCorrectAnswers() {
-    document.querySelectorAll('[data-correct="true"]').forEach(el => {
-        el.classList.add('correct-answer');
-    });
 }
 
 function resetAll() {
