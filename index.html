@@ -78,18 +78,15 @@ function renderPage(page) {
             .filter(l => l);
 
         const question = lines[0];
-
-        const variants = lines.slice(1, -1).map(l =>
-            l.replace('@@', '').trim()
-        );
+        const variants = lines.slice(1, -1).map(l => l.replace('@@', '').trim());
 
         const answerLine = lines[lines.length - 1];
         const match = answerLine.match(/\{@([A-Z])@\}/);
 
         const correctLetter = match ? match[1] : 'A';
-        const correctIndexOriginal = correctLetter.charCodeAt(0) - 65;
+        const correctIndex = correctLetter.charCodeAt(0) - 65;
 
-        const correctVariant = variants[correctIndexOriginal];
+        const correctVariant = variants[correctIndex];
 
         const shuffled = shuffle([...variants]);
 
@@ -105,7 +102,7 @@ function renderPage(page) {
         const result = document.createElement('div');
         result.id = 'result' + qIndex;
 
-        shuffled.forEach((v, i) => {
+        shuffled.forEach((v) => {
 
             const label = document.createElement('label');
             label.className = 'variant';
@@ -114,17 +111,16 @@ function renderPage(page) {
             input.type = 'radio';
             input.name = 'q' + qIndex;
 
-            // 🔥 главное исправление
             input.addEventListener('change', () => {
+
                 checkAnswer(qIndex, v, correctVariant);
 
-                // блокируем после ответа
                 document.querySelectorAll(`input[name="q${qIndex}"]`)
                     .forEach(el => el.disabled = true);
             });
 
             label.appendChild(input);
-            label.innerHTML += ' ' + v;
+            label.appendChild(document.createTextNode(' ' + v));
 
             div.appendChild(label);
         });
@@ -134,10 +130,11 @@ function renderPage(page) {
     });
 }
 
-function checkAnswer(questionDiv, selectedLabel) {
-    const result = questionDiv.querySelector('div');
+// ✅ исправленная проверка
+function checkAnswer(qIndex, selected, correct) {
+    const result = document.getElementById('result' + qIndex);
 
-    if (selectedLabel.dataset.correct) {
+    if (selected === correct) {
         result.textContent = 'Дұрыс ✅';
         result.className = 'correct';
     } else {
@@ -163,7 +160,7 @@ function shuffleQuestions() {
     renderPagination();
 }
 
-// 🔥 shuffle только текущей страницы
+// 🔥 shuffle текущей страницы
 function shuffleCurrentPage() {
     const start = (currentPage - 1) * questionsPerPage;
     const end = start + questionsPerPage;
@@ -178,6 +175,7 @@ function shuffleCurrentPage() {
     renderPage(currentPage);
 }
 
+// 📄 pagination
 function renderPagination() {
     const div = document.getElementById('pagination');
     div.innerHTML = '';
@@ -200,6 +198,7 @@ function renderPagination() {
     }
 }
 
+// 🔄 reset
 function resetAll() {
     loadTest();
 }
