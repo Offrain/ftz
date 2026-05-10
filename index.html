@@ -1,4 +1,63 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Тест жүйесі</title>
+
+<style>
+body {
+    font-family: Arial;
+    margin: 20px;
+}
+
+.question {
+    margin-bottom: 20px;
+}
+
+.variant {
+    display: block;
+    margin: 5px 0;
+    cursor: pointer;
+}
+
+.correct { color: green; }
+.incorrect { color: red; }
+
+.correct-answer {
+    font-weight: bold;
+    color: green;
+}
+
+.pagination {
+    margin-top: 20px;
+}
+
+.pagination button {
+    margin: 5px;
+}
+
+.active {
+    background: blue;
+    color: white;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Тест</h1>
+
+<button onclick="shuffleQuestions()">Барлығын араластыру</button>
+<button onclick="shuffleCurrentPage()">Осы беттегі жауаптарды араластыру</button>
+<button onclick="showCorrectAnswers()">Дұрыс жауаптарды көрсету</button>
+<button onclick="resetAll()">Қайта бастау</button>
+
+<div id="quiz"></div>
+<div class="pagination" id="pagination"></div>
+
 <script>
+
 let currentPage = 1;
 const questionsPerPage = 30;
 let allQuestions = [];
@@ -14,14 +73,16 @@ async function loadTest() {
 }
 
 function renderPage(page) {
-    const quizDiv = document.getElementById('quiz');
-    quizDiv.innerHTML = '';
+    const quiz = document.getElementById('quiz');
+    quiz.innerHTML = '';
 
     const start = (page - 1) * questionsPerPage;
     const end = page * questionsPerPage;
+
     const pageQuestions = allQuestions.slice(start, end);
 
     pageQuestions.forEach((block, index) => {
+
         const lines = block.split('\n')
             .map(l => l.trim())
             .filter(l => l);
@@ -44,48 +105,48 @@ function renderPage(page) {
 
         const qIndex = start + index;
 
-        const qDiv = document.createElement('div');
-        qDiv.className = 'question';
-        qDiv.id = `q${qIndex}`;
+        const div = document.createElement('div');
+        div.className = 'question';
 
-        const qText = document.createElement('p');
-        qText.textContent = `${qIndex + 1}. ${question}`;
-        qDiv.appendChild(qText);
+        const p = document.createElement('p');
+        p.textContent = (qIndex + 1) + '. ' + question;
+        div.appendChild(p);
+
+        const result = document.createElement('div');
+        result.id = 'result' + qIndex;
 
         const labels = ['A','B','C','D','E'];
-        const result = document.createElement('div');
-        result.id = `result${qIndex}`;
 
         shuffled.forEach((v, i) => {
+
             const label = document.createElement('label');
             label.className = 'variant';
 
             const input = document.createElement('input');
             input.type = 'radio';
-            input.name = `q${qIndex}`;
-            input.value = i;
+            input.name = 'q' + qIndex;
 
             input.onclick = () => {
                 checkAnswer(qIndex, i === correctIndex);
             };
 
             label.appendChild(input);
-            label.innerHTML += ` ${labels[i]}. ${v}`;
+            label.innerHTML += ' ' + labels[i] + '. ' + v;
 
             if (i === correctIndex) {
                 label.dataset.correct = true;
             }
 
-            qDiv.appendChild(label);
+            div.appendChild(label);
         });
 
-        qDiv.appendChild(result);
-        quizDiv.appendChild(qDiv);
+        div.appendChild(result);
+        quiz.appendChild(div);
     });
 }
 
 function checkAnswer(index, isCorrect) {
-    const result = document.getElementById(`result${index}`);
+    const result = document.getElementById('result' + index);
 
     if (isCorrect) {
         result.textContent = 'Дұрыс ✅';
@@ -104,7 +165,7 @@ function shuffle(arr) {
     return arr;
 }
 
-// 🔥 перемешивание ВСЕХ вопросов
+// 🔥 перемешать ВСЕ вопросы
 function shuffleQuestions() {
     allQuestions = shuffle(allQuestions);
     currentPage = 1;
@@ -112,8 +173,8 @@ function shuffleQuestions() {
     renderPagination();
 }
 
-// 🔥 перемешивание ТОЛЬКО текущей страницы
-function shuffleCurrentPageVariants() {
+// 🔥 перемешать ТОЛЬКО текущую страницу (варианты)
+function shuffleCurrentPage() {
     renderPage(currentPage);
 }
 
@@ -150,4 +211,8 @@ function resetAll() {
 }
 
 loadTest();
+
 </script>
+
+</body>
+</html>
