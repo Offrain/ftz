@@ -80,7 +80,7 @@
 
     <script>
         let currentPage = 1;
-        const questionsPerPage = 50;
+        const questionsPerPage = 30;
         let allQuestions = [];
 
         async function loadTest() {
@@ -125,51 +125,34 @@
 
             pageQuestions.forEach((questionBlock, index) => {
                 const lines = questionBlock.split('\n')
-                    .map(line => line.trim())
-                    .filter(line => line && !line.match(/{~\d+~}/));
+                    .map(line => line.replace(/\{.*?\}/g, '').trim())
+                    .filter(line => line);
 
                 if (lines.length < 2) return;
 
-                let question = '';
-                let variantsStartIndex = -1;
-                for (let i = 0; i < lines.length; i++) {
-                    if (lines[i].includes('@@')) {
-                        variantsStartIndex = i;
-                        break;
-                    }
-                    question += ' ' + lines[i];
-                }
+                const question = lines[0];
+                const variants = lines.slice(1).map(line => line.replace('@@', '').trim());
 
-                if (variantsStartIndex === -1) return;
-
-                const variants = lines.slice(variantsStartIndex)
-                    .filter(line => line.includes('@@'))
-                    .map(line => line.replace('@@', '').trim());
-
-                const correctAnswerTag = lines[lines.length - 1];
-                const correctIndex = getCorrectIndex(correctAnswerTag);
-
-                const indexedVariants = variants.map((variant, idx) => ({
-                    text: variant,
-                    isCorrect: idx === correctIndex
-                }));
-                const shuffledVariants = shuffleVariants(indexedVariants);
+                const correctVariant = variants[0];
+                const wrongVariants = variants.slice(1);
+                const allVariants = shuffleVariants([correctVariant, ...wrongVariants]);
 
                 const questionDiv = document.createElement('div');
                 questionDiv.classList.add('question');
                 questionDiv.id = `q${start + index}`;
 
                 const questionElem = document.createElement('p');
-                questionElem.textContent = `${start + index + 1}. ${question.trim()}`;
+                questionElem.textContent = `${start + index + 1}. ${question}`;
                 questionDiv.appendChild(questionElem);
 
                 const labels = ['A', 'B', 'C', 'D', 'E'];
+                const correctAnswerIndex = allVariants.indexOf(correctVariant);
 
-                shuffledVariants.forEach((variant, vIndex) => {
+                allVariants.forEach((variant, vIndex) => {
                     const label = document.createElement('label');
                     label.classList.add('variant');
-                    label.innerHTML = `<input type="radio" name="q${start + index}" value="${variant.isCorrect ? 'correct' : 'wrong'}"> ${labels[vIndex]}. ${variant.text}`;
-                    if (variant.isCorrect) {
+                    label.innerHTML = `<input type="radio" name="q${start + index}" value="${vIndex === correctAnswerIndex ? 'correct' : 'wrong'}"> ${labels[vIndex]}. ${variant}`;
+                    if (vIndex === correctAnswerIndex) {
                         label.dataset.correct = true;
                     }
                     questionDiv.appendChild(label);
@@ -178,7 +161,7 @@
                 const checkButton = document.createElement('button');
                 checkButton.textContent = 'Тексеру';
                 checkButton.onclick = function () {
-                    checkAnswer(start + index);
+                    checkAnswer(start + index, correctAnswerIndex);
                 };
 
                 const resultDiv = document.createElement('div');
@@ -188,14 +171,6 @@
                 questionDiv.appendChild(checkButton);
                 quizDiv.appendChild(questionDiv);
             });
-        }
-
-        function getCorrectIndex(tag) {
-            const match = tag.match(/\{@([A-E])@\}/);
-            if (match) {
-                return ['A', 'B', 'C', 'D', 'E'].indexOf(match[1]);
-            }
-            return -1;
         }
 
         function renderPagination() {
@@ -209,12 +184,14 @@
                 button.onclick = () => {
                     currentPage = i;
                     renderPage(currentPage);
-                    renderPagination();
+                    renderPagination();  // Re-render pagination after changing page
                 };
 
+                // Highlight the current page button
                 if (i === currentPage) {
                     button.classList.add('active');
                 }
+                
                 paginationDiv.appendChild(button);
             }
         }
@@ -228,7 +205,7 @@
             return shuffled;
         }
 
-        function checkAnswer(questionIndex) {
+        function checkAnswer(questionIndex, correctAnswerIndex) {
             const selectedOption = document.querySelector(`input[name="q${questionIndex}"]:checked`);
 
             const resultDiv = document.getElementById(`result${questionIndex}`);
