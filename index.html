@@ -24,11 +24,6 @@ body {
 .correct { color: green; }
 .incorrect { color: red; }
 
-.correct-answer {
-    font-weight: bold;
-    color: green;
-}
-
 .pagination button {
     margin: 5px;
 }
@@ -119,17 +114,17 @@ function renderPage(page) {
             input.type = 'radio';
             input.name = 'q' + qIndex;
 
-            // 🔥 ВАЖНО: сравниваем по значению, не по индексу
-            input.onclick = () => {
+            // 🔥 главное исправление
+            input.addEventListener('change', () => {
                 checkAnswer(qIndex, v, correctVariant);
-            };
+
+                // блокируем после ответа
+                document.querySelectorAll(`input[name="q${qIndex}"]`)
+                    .forEach(el => el.disabled = true);
+            });
 
             label.appendChild(input);
             label.innerHTML += ' ' + v;
-
-            if (v === correctVariant) {
-                label.dataset.correct = true;
-            }
 
             div.appendChild(label);
         });
@@ -139,7 +134,7 @@ function renderPage(page) {
     });
 }
 
-// 🔥 ГЛАВНОЕ ИСПРАВЛЕНИЕ
+// 🔥 проверка ответа
 function checkAnswer(index, selected, correct) {
     const result = document.getElementById('result' + index);
 
@@ -152,6 +147,7 @@ function checkAnswer(index, selected, correct) {
     }
 }
 
+// 🔀 shuffle
 function shuffle(arr) {
     for (let i = arr.length - 1; i > 0; i--) {
         let j = Math.floor(Math.random() * (i + 1));
@@ -160,7 +156,7 @@ function shuffle(arr) {
     return arr;
 }
 
-// 🔥 перемешать все вопросы
+// 🔥 shuffle всех вопросов
 function shuffleQuestions() {
     allQuestions = shuffle([...allQuestions]);
     currentPage = 1;
@@ -168,7 +164,7 @@ function shuffleQuestions() {
     renderPagination();
 }
 
-// 🔥 перемешать только текущую страницу (30 вопросов)
+// 🔥 shuffle только текущей страницы
 function shuffleCurrentPage() {
     const start = (currentPage - 1) * questionsPerPage;
     const end = start + questionsPerPage;
