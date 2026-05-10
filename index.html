@@ -134,11 +134,10 @@ function renderPage(page) {
     });
 }
 
-// 🔥 проверка ответа
-function checkAnswer(index, selected, correct) {
-    const result = document.getElementById('result' + index);
+function checkAnswer(questionDiv, selectedLabel) {
+    const result = questionDiv.querySelector('div');
 
-    if (selected === correct) {
+    if (selectedLabel.dataset.correct) {
         result.textContent = 'Дұрыс ✅';
         result.className = 'correct';
     } else {
