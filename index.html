@@ -1,40 +1,3 @@
-<!DOCTYPE html>
-<html lang="kk">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Тест жүйесі</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            line-height: 1.6;
-        }
-        .question { margin-bottom: 20px; }
-        .variant { display: block; margin-bottom: 5px; cursor: pointer; }
-        .question-result { font-weight: bold; margin-top: 10px; }
-        .correct { color: green; }
-        .incorrect { color: red; }
-        .pagination { margin-top: 20px; text-align: center; }
-        .pagination button { margin: 5px; padding: 10px; }
-        .pagination button.active {
-            background-color: #007bff;
-            color: white;
-        }
-        .correct-answer { font-weight: bold; color: green; }
-    </style>
-</head>
-<body>
-
-<h1>Тест</h1>
-
-<button onclick="shuffleQuestions()">Араластыру</button>
-<button onclick="showCorrectAnswers()">Дұрыс жауаптарды көрсету</button>
-<button onclick="resetAll()">Қайта бастау</button>
-
-<div id="quiz"></div>
-<div class="pagination" id="pagination"></div>
-
 <script>
 let currentPage = 1;
 const questionsPerPage = 30;
@@ -63,18 +26,13 @@ function renderPage(page) {
             .map(l => l.trim())
             .filter(l => l);
 
-        if (lines.length < 2) return;
-
         const question = lines[0];
 
-        // варианты (без последней строки)
         const variants = lines.slice(1, -1).map(l =>
             l.replace('@@', '').trim()
         );
 
-        // строка с ответом
         const answerLine = lines[lines.length - 1];
-
         const match = answerLine.match(/\{@([A-Z])@\}/);
         const correctLetter = match ? match[1] : 'A';
 
@@ -84,24 +42,35 @@ function renderPage(page) {
         const shuffled = shuffle([...variants]);
         const correctIndex = shuffled.indexOf(correctVariant);
 
+        const qIndex = start + index;
+
         const qDiv = document.createElement('div');
         qDiv.className = 'question';
-        qDiv.id = `q${start + index}`;
+        qDiv.id = `q${qIndex}`;
 
         const qText = document.createElement('p');
-        qText.textContent = `${start + index + 1}. ${question}`;
+        qText.textContent = `${qIndex + 1}. ${question}`;
         qDiv.appendChild(qText);
 
         const labels = ['A','B','C','D','E'];
+        const result = document.createElement('div');
+        result.id = `result${qIndex}`;
 
         shuffled.forEach((v, i) => {
             const label = document.createElement('label');
             label.className = 'variant';
 
-            label.innerHTML = `
-                <input type="radio" name="q${start + index}" value="${i === correctIndex}">
-                ${labels[i]}. ${v}
-            `;
+            const input = document.createElement('input');
+            input.type = 'radio';
+            input.name = `q${qIndex}`;
+            input.value = i;
+
+            input.onclick = () => {
+                checkAnswer(qIndex, i === correctIndex);
+            };
+
+            label.appendChild(input);
+            label.innerHTML += ` ${labels[i]}. ${v}`;
 
             if (i === correctIndex) {
                 label.dataset.correct = true;
@@ -110,31 +79,15 @@ function renderPage(page) {
             qDiv.appendChild(label);
         });
 
-        const btn = document.createElement('button');
-        btn.textContent = 'Тексеру';
-        btn.onclick = () => checkAnswer(start + index);
-
-        const result = document.createElement('div');
-        result.id = `result${start + index}`;
-
-        qDiv.appendChild(btn);
         qDiv.appendChild(result);
-
         quizDiv.appendChild(qDiv);
     });
 }
 
-function checkAnswer(i) {
-    const selected = document.querySelector(`input[name="q${i}"]:checked`);
-    const result = document.getElementById(`result${i}`);
+function checkAnswer(index, isCorrect) {
+    const result = document.getElementById(`result${index}`);
 
-    if (!selected) {
-        result.textContent = 'Жауап таңдаңыз!';
-        result.style.color = 'orange';
-        return;
-    }
-
-    if (selected.value === "true") {
+    if (isCorrect) {
         result.textContent = 'Дұрыс ✅';
         result.className = 'correct';
     } else {
@@ -149,6 +102,19 @@ function shuffle(arr) {
         [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     return arr;
+}
+
+// 🔥 перемешивание ВСЕХ вопросов
+function shuffleQuestions() {
+    allQuestions = shuffle(allQuestions);
+    currentPage = 1;
+    renderPage(currentPage);
+    renderPagination();
+}
+
+// 🔥 перемешивание ТОЛЬКО текущей страницы
+function shuffleCurrentPageVariants() {
+    renderPage(currentPage);
 }
 
 function renderPagination() {
@@ -173,11 +139,6 @@ function renderPagination() {
     }
 }
 
-function shuffleQuestions() {
-    allQuestions = shuffle(allQuestions);
-    renderPage(1);
-}
-
 function showCorrectAnswers() {
     document.querySelectorAll('[data-correct="true"]').forEach(el => {
         el.classList.add('correct-answer');
@@ -190,6 +151,3 @@ function resetAll() {
 
 loadTest();
 </script>
-
-</body>
-</html>
