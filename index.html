@@ -48,8 +48,8 @@ body {
 
 <h1>Тест</h1>
 
-<button onclick="shuffleQuestions()">Барлығын араластыру</button>
-<button onclick="shuffleCurrentPage()">Осы беттегі жауаптарды араластыру</button>
+<button onclick="shuffleQuestions()">Барлық сұрақтарды араластыру</button>
+<button onclick="shuffleCurrentPage()">Осы беттегі 30 сұрақты араластыру</button>
 <button onclick="showCorrectAnswers()">Дұрыс жауаптарды көрсету</button>
 <button onclick="resetAll()">Қайта бастау</button>
 
@@ -165,16 +165,26 @@ function shuffle(arr) {
     return arr;
 }
 
-// 🔥 перемешать ВСЕ вопросы
+// 🔥 ВСЕ вопросы
 function shuffleQuestions() {
-    allQuestions = shuffle(allQuestions);
+    allQuestions = shuffle([...allQuestions]);
     currentPage = 1;
     renderPage(currentPage);
     renderPagination();
 }
 
-// 🔥 перемешать ТОЛЬКО текущую страницу (варианты)
+// 🔥 ТОЛЬКО текущие 30 вопросов
 function shuffleCurrentPage() {
+    const start = (currentPage - 1) * questionsPerPage;
+    const end = start + questionsPerPage;
+
+    const current = allQuestions.slice(start, end);
+    const shuffled = shuffle([...current]);
+
+    for (let i = 0; i < shuffled.length; i++) {
+        allQuestions[start + i] = shuffled[i];
+    }
+
     renderPage(currentPage);
 }
 
