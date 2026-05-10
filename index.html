@@ -138,7 +138,10 @@ function checkAnswer(qIndex, selected, correct) {
         result.textContent = 'Дұрыс ✅';
         result.className = 'correct';
     } else {
-        result.textContent = 'Қате ❌';
+        result.innerHTML = `
+            Қате ❌<br>
+            Дұрыс жауап: <b>${correct}</b>
+        `;
         result.className = 'incorrect';
     }
 }
