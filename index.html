@@ -13,6 +13,8 @@ body {
 
 .question {
     margin-bottom: 20px;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
 }
 
 .variant {
@@ -76,31 +78,31 @@ function renderPage(page) {
         const lines = block
             .split('\n')
             .map(l => l.trim())
-            .filter(l => l);
+            .filter(l => l.length > 0);
 
-        // 🔥 находим где начинаются варианты (+/-)
-        const plusIndex = lines.findIndex(l =>
-            l.startsWith('+') || l.startsWith('-') ||
-            l.startsWith(' +') || l.startsWith(' -')
+        // 🔥 всё кроме ответов считаем частью вопроса
+        const questionLines = lines.filter(l =>
+            !l.startsWith('+') &&
+            !l.startsWith('-')
         );
 
-        if (plusIndex === -1) return;
-
-        // ❓ вопрос (всё до вариантов)
-        const question = lines
-            .slice(0, plusIndex)
+        const question = questionLines
             .join(' ')
             .replace('?', '')
             .trim();
 
-        // ✅ варианты (только + / -)
+        // ✅ варианты
         const variants = lines
-            .slice(plusIndex)
-            .filter(l => l.trim().startsWith('+') || l.trim().startsWith('-'))
+            .filter(l =>
+                l.startsWith('+') ||
+                l.startsWith('-')
+            )
             .map(l => ({
                 text: l.replace(/^(\+|-)\s*/, '').trim(),
-                correct: l.trim().startsWith('+')
+                correct: l.startsWith('+')
             }));
+
+        if (!variants.length) return;
 
         const correctVariant = variants.find(v => v.correct)?.text;
 
