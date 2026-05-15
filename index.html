@@ -12,7 +12,9 @@ body {
 }
 
 .question {
-    margin-bottom: 20px;
+    margin-bottom: 25px;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
 }
 
 .variant {
@@ -31,6 +33,10 @@ body {
 .active {
     background: blue;
     color: white;
+}
+
+pre {
+    white-space: pre-line;
 }
 </style>
 </head>
@@ -56,7 +62,10 @@ async function loadTest() {
     const response = await fetch('test.txt');
     const text = await response.text();
 
-    allQuestions = text.split('~~').filter(q => q.trim());
+    allQuestions = text
+        .split('~~')
+        .map(q => q.trim())
+        .filter(q => q.length > 0);
 
     renderPage(currentPage);
     renderPagination();
@@ -73,16 +82,23 @@ function renderPage(page) {
 
     pageQuestions.forEach((block, index) => {
 
-        const parts = block.split('@@').map(p => p.trim()).filter(Boolean);
+        // 🔥 достаем правильный ответ отдельно
+        const answerMatch = block.match(/\{@([A-Z])@\}/);
+        const correctLetter = answerMatch ? answerMatch[1] : 'A';
+
+        // убираем ответ из текста
+        const cleanBlock = block.replace(/\{@[A-Z]@\}/, '');
+
+        // режем вопрос и варианты
+        const parts = cleanBlock
+            .split('@@')
+            .map(p => p.trim())
+            .filter(p => p.length > 0);
 
         const question = parts[0];
-        const answerBlock = parts[parts.length - 1];
-        const variants = parts.slice(1, -1);
+        const variants = parts.slice(1);
 
-        const match = answerBlock.match(/\{@([A-Z])@\}/);
-        const correctLetter = match ? match[1] : 'A';
         const correctIndex = correctLetter.charCodeAt(0) - 65;
-
         const correctVariant = variants[correctIndex];
 
         const shuffled = shuffle([...variants]);
@@ -93,7 +109,11 @@ function renderPage(page) {
         div.className = 'question';
 
         const p = document.createElement('p');
+
+        // 🔥 сохраняем формат столбцов
+        p.style.whiteSpace = 'pre-line';
         p.textContent = (qIndex + 1) + '. ' + question;
+
         div.appendChild(p);
 
         const result = document.createElement('div');
