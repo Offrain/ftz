@@ -82,9 +82,10 @@ function renderPage(page) {
 
     pageQuestions.forEach((block, index) => {
 
-        // 🔥 правильный ответ (CD, A, ABC и т.д.)
         const answerMatch = block.match(/\{@([A-Z]+)@\}/);
         const correctLetters = answerMatch ? answerMatch[1].split('') : ['A'];
+
+        const isMulti = correctLetters.length > 1;
 
         const cleanBlock = block.replace(/\{@[A-Z]+@\}/, '');
 
@@ -96,7 +97,6 @@ function renderPage(page) {
         const question = parts[0];
         const variants = parts.slice(1);
 
-        // превращаем буквы в тексты вариантов
         const correctValues = correctLetters.map(l => variants[l.charCodeAt(0) - 65]);
 
         const shuffled = shuffle([...variants]);
@@ -121,7 +121,8 @@ function renderPage(page) {
             label.className = 'variant';
 
             const input = document.createElement('input');
-            input.type = 'checkbox';
+
+            input.type = isMulti ? 'checkbox' : 'radio';
             input.name = 'q' + qIndex;
             input.value = v;
 
@@ -133,7 +134,16 @@ function renderPage(page) {
                 const selectedValues =
                     Array.from(selectedInputs).map(i => i.value);
 
-                checkAnswerMulti(qIndex, selectedValues, correctValues);
+                if (!isMulti) {
+                    checkAnswer(qIndex, selectedValues, correctValues);
+                    disableAll(qIndex);
+                    return;
+                }
+
+                if (selectedValues.length === correctValues.length) {
+                    checkAnswer(qIndex, selectedValues, correctValues);
+                    disableAll(qIndex);
+                }
             });
 
             label.appendChild(input);
@@ -147,7 +157,7 @@ function renderPage(page) {
     });
 }
 
-function checkAnswerMulti(qIndex, selectedValues, correctValues) {
+function checkAnswer(qIndex, selectedValues, correctValues) {
     const result = document.getElementById('result' + qIndex);
 
     const isCorrect =
@@ -164,7 +174,9 @@ function checkAnswerMulti(qIndex, selectedValues, correctValues) {
         `;
         result.className = 'incorrect';
     }
+}
 
+function disableAll(qIndex) {
     document.querySelectorAll(`input[name="q${qIndex}"]`)
         .forEach(el => el.disabled = true);
 }
