@@ -73,20 +73,25 @@ function renderPage(page) {
 
     pageQuestions.forEach((block, index) => {
 
-        const lines = block.split('\n')
+        const lines = block
+            .split('\n')
             .map(l => l.trim())
             .filter(l => l);
 
-        const question = lines[0];
-        const variants = lines.slice(1, -1).map(l => l.replace('@@', '').trim());
+        // ❓ вопрос
+        const question = lines.find(l => l.startsWith('?'))
+            ?.replace('?', '')
+            .trim();
 
-        const answerLine = lines[lines.length - 1];
-        const match = answerLine.match(/\{@([A-Z])@\}/);
+        // ✅ варианты
+        const variants = lines
+            .filter(l => l.startsWith('+') || l.startsWith('-'))
+            .map(l => ({
+                text: l.slice(1).trim(),
+                correct: l.startsWith('+')
+            }));
 
-        const correctLetter = match ? match[1] : 'A';
-        const correctIndex = correctLetter.charCodeAt(0) - 65;
-
-        const correctVariant = variants[correctIndex];
+        const correctVariant = variants.find(v => v.correct)?.text;
 
         const shuffled = shuffle([...variants]);
 
@@ -113,14 +118,14 @@ function renderPage(page) {
 
             input.addEventListener('change', () => {
 
-                checkAnswer(qIndex, v, correctVariant);
+                checkAnswer(qIndex, v.text, correctVariant);
 
                 document.querySelectorAll(`input[name="q${qIndex}"]`)
                     .forEach(el => el.disabled = true);
             });
 
             label.appendChild(input);
-            label.appendChild(document.createTextNode(' ' + v));
+            label.appendChild(document.createTextNode(' ' + v.text));
 
             div.appendChild(label);
         });
@@ -130,7 +135,6 @@ function renderPage(page) {
     });
 }
 
-// ✅ исправленная проверка
 function checkAnswer(qIndex, selected, correct) {
     const result = document.getElementById('result' + qIndex);
 
