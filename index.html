@@ -82,14 +82,12 @@ function renderPage(page) {
 
     pageQuestions.forEach((block, index) => {
 
-        // 🔥 достаем правильный ответ отдельно
-        const answerMatch = block.match(/\{@([A-Z])@\}/);
-        const correctLetter = answerMatch ? answerMatch[1] : 'A';
+        // 🔥 правильный ответ (CD, A, ABC и т.д.)
+        const answerMatch = block.match(/\{@([A-Z]+)@\}/);
+        const correctLetters = answerMatch ? answerMatch[1].split('') : ['A'];
 
-        // убираем ответ из текста
-        const cleanBlock = block.replace(/\{@[A-Z]@\}/, '');
+        const cleanBlock = block.replace(/\{@[A-Z]+@\}/, '');
 
-        // режем вопрос и варианты
         const parts = cleanBlock
             .split('@@')
             .map(p => p.trim())
@@ -98,8 +96,8 @@ function renderPage(page) {
         const question = parts[0];
         const variants = parts.slice(1);
 
-        const correctIndex = correctLetter.charCodeAt(0) - 65;
-        const correctVariant = variants[correctIndex];
+        // превращаем буквы в тексты вариантов
+        const correctValues = correctLetters.map(l => variants[l.charCodeAt(0) - 65]);
 
         const shuffled = shuffle([...variants]);
 
@@ -109,8 +107,6 @@ function renderPage(page) {
         div.className = 'question';
 
         const p = document.createElement('p');
-
-        // 🔥 сохраняем формат столбцов
         p.style.whiteSpace = 'pre-line';
         p.textContent = (qIndex + 1) + '. ' + question;
 
@@ -125,15 +121,19 @@ function renderPage(page) {
             label.className = 'variant';
 
             const input = document.createElement('input');
-            input.type = 'radio';
+            input.type = 'checkbox';
             input.name = 'q' + qIndex;
+            input.value = v;
 
             input.addEventListener('change', () => {
 
-                checkAnswer(qIndex, v, correctVariant);
+                const selectedInputs =
+                    document.querySelectorAll(`input[name="q${qIndex}"]:checked`);
 
-                document.querySelectorAll(`input[name="q${qIndex}"]`)
-                    .forEach(el => el.disabled = true);
+                const selectedValues =
+                    Array.from(selectedInputs).map(i => i.value);
+
+                checkAnswerMulti(qIndex, selectedValues, correctValues);
             });
 
             label.appendChild(input);
@@ -147,19 +147,26 @@ function renderPage(page) {
     });
 }
 
-function checkAnswer(qIndex, selected, correct) {
+function checkAnswerMulti(qIndex, selectedValues, correctValues) {
     const result = document.getElementById('result' + qIndex);
 
-    if (selected === correct) {
+    const isCorrect =
+        selectedValues.length === correctValues.length &&
+        selectedValues.every(v => correctValues.includes(v));
+
+    if (isCorrect) {
         result.textContent = 'Дұрыс ✅';
         result.className = 'correct';
     } else {
         result.innerHTML = `
             Қате ❌<br>
-            Дұрыс жауап: <b>${correct}</b>
+            Дұрыс жауаптар: <b>${correctValues.join(', ')}</b>
         `;
         result.className = 'incorrect';
     }
+
+    document.querySelectorAll(`input[name="q${qIndex}"]`)
+        .forEach(el => el.disabled = true);
 }
 
 function shuffle(arr) {
