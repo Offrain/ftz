@@ -73,16 +73,13 @@ function renderPage(page) {
 
     pageQuestions.forEach((block, index) => {
 
-        const lines = block.split('\n')
-            .map(l => l.trim())
-            .filter(l => l);
+        const parts = block.split('@@').map(p => p.trim()).filter(Boolean);
 
-        const question = lines[0];
-        const variants = lines.slice(1, -1).map(l => l.replace('@@', '').trim());
+        const question = parts[0];
+        const answerBlock = parts[parts.length - 1];
+        const variants = parts.slice(1, -1);
 
-        const answerLine = lines[lines.length - 1];
-        const match = answerLine.match(/\{@([A-Z])@\}/);
-
+        const match = answerBlock.match(/\{@([A-Z])@\}/);
         const correctLetter = match ? match[1] : 'A';
         const correctIndex = correctLetter.charCodeAt(0) - 65;
 
@@ -130,7 +127,6 @@ function renderPage(page) {
     });
 }
 
-// ✅ исправленная проверка
 function checkAnswer(qIndex, selected, correct) {
     const result = document.getElementById('result' + qIndex);
 
@@ -146,7 +142,6 @@ function checkAnswer(qIndex, selected, correct) {
     }
 }
 
-// 🔀 shuffle
 function shuffle(arr) {
     for (let i = arr.length - 1; i > 0; i--) {
         let j = Math.floor(Math.random() * (i + 1));
@@ -155,7 +150,6 @@ function shuffle(arr) {
     return arr;
 }
 
-// 🔥 shuffle всех вопросов
 function shuffleQuestions() {
     allQuestions = shuffle([...allQuestions]);
     currentPage = 1;
@@ -163,7 +157,6 @@ function shuffleQuestions() {
     renderPagination();
 }
 
-// 🔥 shuffle текущей страницы
 function shuffleCurrentPage() {
     const start = (currentPage - 1) * questionsPerPage;
     const end = start + questionsPerPage;
@@ -178,7 +171,6 @@ function shuffleCurrentPage() {
     renderPage(currentPage);
 }
 
-// 📄 pagination
 function renderPagination() {
     const div = document.getElementById('pagination');
     div.innerHTML = '';
@@ -201,7 +193,6 @@ function renderPagination() {
     }
 }
 
-// 🔄 reset
 function resetAll() {
     loadTest();
 }
