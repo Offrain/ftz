@@ -7,32 +7,30 @@
 
 <style>
 body {
-    font-family: Arial;
-    margin: 20px;
+    font-family: Arial;
+    margin: 20px;
 }
 
 .question {
-    margin-bottom: 20px;
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
+    margin-bottom: 20px;
 }
 
 .variant {
-    display: block;
-    margin: 5px 0;
-    cursor: pointer;
+    display: block;
+    margin: 5px 0;
+    cursor: pointer;
 }
 
 .correct { color: green; }
 .incorrect { color: red; }
 
 .pagination button {
-    margin: 5px;
+    margin: 5px;
 }
 
 .active {
-    background: blue;
-    color: white;
+    background: blue;
+    color: white;
 }
 </style>
 </head>
@@ -55,172 +53,157 @@ const questionsPerPage = 30;
 let allQuestions = [];
 
 async function loadTest() {
-    const response = await fetch('test.txt');
-    const text = await response.text();
+    const response = await fetch('test.txt');
+    const text = await response.text();
 
-    allQuestions = text.split('~~').filter(q => q.trim());
+    allQuestions = text.split('~~').filter(q => q.trim());
 
-    renderPage(currentPage);
-    renderPagination();
+    renderPage(currentPage);
+    renderPagination();
 }
 
 function renderPage(page) {
-    const quiz = document.getElementById('quiz');
-    quiz.innerHTML = '';
+    const quiz = document.getElementById('quiz');
+    quiz.innerHTML = '';
 
-    const start = (page - 1) * questionsPerPage;
-    const end = page * questionsPerPage;
+    const start = (page - 1) * questionsPerPage;
+    const end = page * questionsPerPage;
 
-    const pageQuestions = allQuestions.slice(start, end);
+    const pageQuestions = allQuestions.slice(start, end);
 
-    pageQuestions.forEach((block, index) => {
+    pageQuestions.forEach((block, index) => {
 
-        const lines = block
-            .split('\n')
-            .map(l => l.trim())
-            .filter(l => l.length > 0);
+        const lines = block.split('\n')
+            .map(l => l.trim())
+            .filter(l => l);
 
-        // 🔥 всё кроме ответов считаем частью вопроса
-        const questionLines = lines.filter(l =>
-            !l.startsWith('+') &&
-            !l.startsWith('-')
-        );
+        const question = lines[0];
+        const variants = lines.slice(1, -1).map(l => l.replace('@@', '').trim());
 
-        const question = questionLines
-            .join(' ')
-            .replace('?', '')
-            .trim();
+        const answerLine = lines[lines.length - 1];
+        const match = answerLine.match(/\{@([A-Z])@\}/);
 
-        // ✅ варианты
-        const variants = lines
-            .filter(l =>
-                l.startsWith('+') ||
-                l.startsWith('-')
-            )
-            .map(l => ({
-                text: l.replace(/^(\+|-)\s*/, '').trim(),
-                correct: l.startsWith('+')
-            }));
+        const correctLetter = match ? match[1] : 'A';
+        const correctIndex = correctLetter.charCodeAt(0) - 65;
 
-        if (!variants.length) return;
+        const correctVariant = variants[correctIndex];
 
-        const correctVariant = variants.find(v => v.correct)?.text;
+        const shuffled = shuffle([...variants]);
 
-        const shuffled = shuffle([...variants]);
+        const qIndex = start + index;
 
-        const qIndex = start + index;
+        const div = document.createElement('div');
+        div.className = 'question';
 
-        const div = document.createElement('div');
-        div.className = 'question';
+        const p = document.createElement('p');
+        p.textContent = (qIndex + 1) + '. ' + question;
+        div.appendChild(p);
 
-        const p = document.createElement('p');
-        p.textContent = (qIndex + 1) + '. ' + question;
-        div.appendChild(p);
+        const result = document.createElement('div');
+        result.id = 'result' + qIndex;
 
-        const result = document.createElement('div');
-        result.id = 'result' + qIndex;
+        shuffled.forEach((v) => {
 
-        shuffled.forEach((v) => {
+            const label = document.createElement('label');
+            label.className = 'variant';
 
-            const label = document.createElement('label');
-            label.className = 'variant';
+            const input = document.createElement('input');
+            input.type = 'radio';
+            input.name = 'q' + qIndex;
 
-            const input = document.createElement('input');
-            input.type = 'radio';
-            input.name = 'q' + qIndex;
+            input.addEventListener('change', () => {
 
-            input.addEventListener('change', () => {
+                checkAnswer(qIndex, v, correctVariant);
 
-                checkAnswer(qIndex, v.text, correctVariant);
+                document.querySelectorAll(`input[name="q${qIndex}"]`)
+                    .forEach(el => el.disabled = true);
+            });
 
-                document.querySelectorAll(`input[name="q${qIndex}"]`)
-                    .forEach(el => el.disabled = true);
-            });
+            label.appendChild(input);
+            label.appendChild(document.createTextNode(' ' + v));
 
-            label.appendChild(input);
-            label.appendChild(document.createTextNode(' ' + v.text));
+            div.appendChild(label);
+        });
 
-            div.appendChild(label);
-        });
-
-        div.appendChild(result);
-        quiz.appendChild(div);
-    });
+        div.appendChild(result);
+        quiz.appendChild(div);
+    });
 }
 
+// ✅ исправленная проверка
 function checkAnswer(qIndex, selected, correct) {
-    const result = document.getElementById('result' + qIndex);
+    const result = document.getElementById('result' + qIndex);
 
-    if (selected === correct) {
-        result.textContent = 'Дұрыс ✅';
-        result.className = 'correct';
-    } else {
-        result.innerHTML = `
-            Қате ❌<br>
-            Дұрыс жауап: <b>${correct}</b>
-        `;
-        result.className = 'incorrect';
-    }
+    if (selected === correct) {
+        result.textContent = 'Дұрыс ✅';
+        result.className = 'correct';
+    } else {
+        result.innerHTML = `
+            Қате ❌<br>
+            Дұрыс жауап: <b>${correct}</b>
+        `;
+        result.className = 'incorrect';
+    }
 }
 
 // 🔀 shuffle
 function shuffle(arr) {
-    for (let i = arr.length - 1; i > 0; i--) {
-        let j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
+    for (let i = arr.length - 1; i > 0; i--) {
+        let j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
 }
 
 // 🔥 shuffle всех вопросов
 function shuffleQuestions() {
-    allQuestions = shuffle([...allQuestions]);
-    currentPage = 1;
-    renderPage(currentPage);
-    renderPagination();
+    allQuestions = shuffle([...allQuestions]);
+    currentPage = 1;
+    renderPage(currentPage);
+    renderPagination();
 }
 
 // 🔥 shuffle текущей страницы
 function shuffleCurrentPage() {
-    const start = (currentPage - 1) * questionsPerPage;
-    const end = start + questionsPerPage;
+    const start = (currentPage - 1) * questionsPerPage;
+    const end = start + questionsPerPage;
 
-    const part = allQuestions.slice(start, end);
-    const shuffled = shuffle([...part]);
+    const part = allQuestions.slice(start, end);
+    const shuffled = shuffle([...part]);
 
-    for (let i = 0; i < shuffled.length; i++) {
-        allQuestions[start + i] = shuffled[i];
-    }
+    for (let i = 0; i < shuffled.length; i++) {
+        allQuestions[start + i] = shuffled[i];
+    }
 
-    renderPage(currentPage);
+    renderPage(currentPage);
 }
 
 // 📄 pagination
 function renderPagination() {
-    const div = document.getElementById('pagination');
-    div.innerHTML = '';
+    const div = document.getElementById('pagination');
+    div.innerHTML = '';
 
-    const pages = Math.ceil(allQuestions.length / questionsPerPage);
+    const pages = Math.ceil(allQuestions.length / questionsPerPage);
 
-    for (let i = 1; i <= pages; i++) {
-        const btn = document.createElement('button');
-        btn.textContent = i;
+    for (let i = 1; i <= pages; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
 
-        if (i === currentPage) btn.classList.add('active');
+        if (i === currentPage) btn.classList.add('active');
 
-        btn.onclick = () => {
-            currentPage = i;
-            renderPage(i);
-            renderPagination();
-        };
+        btn.onclick = () => {
+            currentPage = i;
+            renderPage(i);
+            renderPagination();
+        };
 
-        div.appendChild(btn);
-    }
+        div.appendChild(btn);
+    }
 }
 
 // 🔄 reset
 function resetAll() {
-    loadTest();
+    loadTest();
 }
 
 loadTest();
