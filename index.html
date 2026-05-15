@@ -78,17 +78,28 @@ function renderPage(page) {
             .map(l => l.trim())
             .filter(l => l);
 
-        // ❓ вопрос
-        const question = lines.find(l => l.startsWith('?'))
-            ?.replace('?', '')
+        // 🔥 находим где начинаются варианты (+/-)
+        const plusIndex = lines.findIndex(l =>
+            l.startsWith('+') || l.startsWith('-') ||
+            l.startsWith(' +') || l.startsWith(' -')
+        );
+
+        if (plusIndex === -1) return;
+
+        // ❓ вопрос (всё до вариантов)
+        const question = lines
+            .slice(0, plusIndex)
+            .join(' ')
+            .replace('?', '')
             .trim();
 
-        // ✅ варианты
+        // ✅ варианты (только + / -)
         const variants = lines
-            .filter(l => l.startsWith('+') || l.startsWith('-'))
+            .slice(plusIndex)
+            .filter(l => l.trim().startsWith('+') || l.trim().startsWith('-'))
             .map(l => ({
-                text: l.slice(1).trim(),
-                correct: l.startsWith('+')
+                text: l.replace(/^(\+|-)\s*/, '').trim(),
+                correct: l.trim().startsWith('+')
             }));
 
         const correctVariant = variants.find(v => v.correct)?.text;
