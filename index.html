@@ -45,6 +45,22 @@ pre {
 
 <h1>Тест</h1>
 
+<!-- 🔥 НОВЫЙ БЛОК -->
+<div style="margin-bottom:15px;">
+
+    <label>Сколько вопросов:</label>
+    <input type="number" id="countQ" placeholder="например 50" style="width:80px;">
+
+    <br><br>
+
+    <label>Диапазон:</label>
+    <input type="number" id="rangeStart" placeholder="от" style="width:60px;">
+    <input type="number" id="rangeEnd" placeholder="до" style="width:60px;">
+
+    <button onclick="generateRandomRange()">Сгенерировать</button>
+
+</div>
+
 <button onclick="shuffleQuestions()">Барлық сұрақтарды араластыру</button>
 <button onclick="shuffleCurrentPage()">Осы беттегі сұрақтарды араластыру</button>
 <button onclick="resetAll()">Қайта бастау</button>
@@ -80,7 +96,15 @@ function renderPage(page) {
 
     const pageQuestions = allQuestions.slice(start, end);
 
-    pageQuestions.forEach((block, index) => {
+    renderCustomQuestions(pageQuestions, start);
+}
+
+function renderCustomQuestions(questionsArray, globalStartIndex = 0) {
+
+    const quiz = document.getElementById('quiz');
+    quiz.innerHTML = '';
+
+    questionsArray.forEach((block, index) => {
 
         const answerMatch = block.match(/\{@([A-Z]+)@\}/);
         const correctLetters = answerMatch ? answerMatch[1].split('') : ['A'];
@@ -101,7 +125,7 @@ function renderPage(page) {
 
         const shuffled = shuffle([...variants]);
 
-        const qIndex = start + index;
+        const qIndex = globalStartIndex + index;
 
         const div = document.createElement('div');
         div.className = 'question';
@@ -234,6 +258,31 @@ function renderPagination() {
 
 function resetAll() {
     loadTest();
+}
+
+/* 🔥 ГЛАВНАЯ НОВАЯ ФУНКЦИЯ */
+function generateRandomRange() {
+
+    const count = parseInt(document.getElementById('countQ').value);
+    let start = parseInt(document.getElementById('rangeStart').value) - 1;
+    let end = parseInt(document.getElementById('rangeEnd').value);
+
+    if (!count || isNaN(start) || isNaN(end) || start < 0 || end <= start) {
+        alert('Қате енгізу');
+        return;
+    }
+
+    if (end > allQuestions.length) end = allQuestions.length;
+
+    let range = allQuestions.slice(start, end);
+
+    range = shuffle([...range]);
+
+    const selected = range.slice(0, count);
+
+    document.getElementById('pagination').innerHTML = '';
+
+    renderCustomQuestions(selected, start);
 }
 
 loadTest();
